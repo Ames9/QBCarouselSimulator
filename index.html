@@ -599,11 +599,6 @@ function renderTeamGrid() {
   });
 
   // Confirmed signings (non-featured teams)
-  CONFIRMED_SIGNINGS.forEach(s => {
-    const info = TEAM_INFO[s.team] || { full: s.team, primary: '#1c2128', secondary: '#3fb950' };
-    const txtColor = cardTextColor(info.secondary);
-    makeTeamCard(s.team, s.name, `color:var(--green)`, '#3fb95066', container);
-  });
 
   // その他 teams selected by main QBs
   MAIN_QBS.forEach(q => {
