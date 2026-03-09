@@ -567,7 +567,7 @@ function renderTeamGrid() {
     let label = null, labelStyle = '', borderColor = 'transparent';
 
     if (mainQb) {
-      label = mainQb.name;
+      label = mainQb.map(q => q.name).join(' / ');
       labelStyle = `color:${txtColor}`;
       borderColor = info.secondary;
     } else if (choice === 'fa') {
