@@ -305,12 +305,15 @@ const MAIN_QBS = [
   { id: 'willis',  name: 'Malik Willis',      initials: 'MW', from: 'GB (FA)', confirmed: 'MIA' },
   { id: 'cousins', name: 'Kirk Cousins',      initials: 'KC', from: 'ATL' },
   { id: 'rodgers', name: 'Aaron Rodgers',     initials: 'AR', from: 'PIT (FA)' },
-  { id: 'tua',     name: 'Tua Tagovailoa',    initials: 'TT', from: 'MIA' },
+  { id: 'tua',     name: 'Tua Tagovailoa',    initials: 'TT', from: 'MIA', confirmed: 'ATL' },
 ];
 
-// Confirmed signings for non-featured teams
+// Confirmed signings for non-featured (and some featured) teams
 const CONFIRMED_SIGNINGS = [
+  { team: 'ARI', name: 'Gardner Minshew' },
   { team: 'TEN', name: 'Mitchell Trubisky' },
+  { team: 'WAS', name: 'Marcus Mariota' },
+  { team: 'BAL', name: 'Tyler Huntley' },
 ];
 
 const TEAM_INFO = {
@@ -365,7 +368,6 @@ const TRADE_PLAYERS = ['Mac Jones', 'Derek Carr', 'Tanner McKee', 'Spencer Rattl
 const FA_QBS = [
   { name: 'Geno Smith',         lastTeam: 'LVR', status: 'UFA',  prob: 35.0, age: 35, salary:  5000000 },
   { name: 'Russell Wilson',     lastTeam: 'NYG', status: 'UFA',  prob: 19.1, age: 38, salary: 10500000 },
-  { name: 'Marcus Mariota',     lastTeam: 'WSH', status: 'UFA',  prob: 48.4, age: 33, salary:  8000000 },
   { name: 'Tyrod Taylor',       lastTeam: 'NYJ', status: 'UFA',  prob: 24.0, age: 37, salary:  6000000 },
   { name: 'Zach Wilson',        lastTeam: 'MIA', status: 'UFA',  prob:  2.6, age: 27, salary:  6000000 },
   { name: 'Joe Flacco',         lastTeam: 'CIN', status: 'Void', prob: 62.7, age: 41, salary:  4250000 },
@@ -380,8 +382,6 @@ const FA_QBS = [
   { name: 'Philip Rivers',      lastTeam: 'IND', status: 'UFA',  prob: 16.0, age: 45, salary:  1255000 },
   { name: 'Teddy Bridgewater',  lastTeam: 'TB',  status: 'UFA',  prob:  3.1, age: 34, salary:  1255000 },
   { name: 'Sam Ehlinger',       lastTeam: 'DEN', status: 'UFA',  prob:  0.0, age: 28, salary:  1170000 },
-  { name: 'Gardner Minshew',    lastTeam: 'KC',  status: 'UFA',  prob:  3.7, age: 30, salary:  1170000 },
-  { name: 'Tyler Huntley',      lastTeam: 'BAL', status: 'UFA',  prob: 19.4, age: 28, salary:  1170000 },
   { name: 'Skylar Thompson',    lastTeam: 'PIT', status: 'UFA',  prob:  0.0, age: 29, salary:  1100000 },
   { name: 'Clayton Tune',       lastTeam: 'GB',  status: 'SFA',  prob:  5.6, age: 27, salary:  1087500 },
   { name: 'Sam Howell',         lastTeam: 'PHI', status: 'UFA',  prob:  0.0, age: 26, salary:  1005400 },
@@ -426,7 +426,8 @@ function getAssignedFeaturedTeams() {
 
 function getUnassignedFeaturedTeams() {
   const assigned = getAssignedFeaturedTeams();
-  return FEATURED_TEAMS.filter(t => !assigned[t]);
+  const confirmedTeams = new Set(CONFIRMED_SIGNINGS.map(s => s.team));
+  return FEATURED_TEAMS.filter(t => !assigned[t] && !confirmedTeams.has(t));
 }
 
 function isTeamTaken(teamAbbr) {
@@ -561,6 +562,9 @@ function renderTeamGrid() {
   container.innerHTML = '';
   const assigned = getAssignedFeaturedTeams();
 
+  const confirmedMap = {};
+  CONFIRMED_SIGNINGS.forEach(s => { confirmedMap[s.team] = s.name; });
+
   // Featured 8 teams
   FEATURED_TEAMS.forEach(t => {
     const info = TEAM_INFO[t];
@@ -575,6 +579,10 @@ function renderTeamGrid() {
       label = mainQb.map(q => q.name).join(' / ');
       labelStyle = `color:${txtColor}`;
       borderColor = info.secondary;
+    } else if (confirmedMap[t]) {
+      label = confirmedMap[t];
+      labelStyle = `color:var(--green)`;
+      borderColor = '#3fb95066';
     } else if (choice === 'fa') {
       const d = state.teamFa[t] === '__custom__' ? state.teamFaCustom[t] : state.teamFa[t];
       if (d) { label = d; labelStyle = `color:var(--purple)`; borderColor = '#bc8cff66'; }
