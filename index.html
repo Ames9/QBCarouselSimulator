@@ -357,7 +357,7 @@ const TRADE_PLAYERS = ['Mac Jones', 'Derek Carr', 'Tanner McKee', 'Spencer Rattl
 
 // FA QBs list
 const FA_QBS = [
-  { name: 'Geno Smith',         lastTeam: 'SEA', status: 'UFA',  prob: 35.0, age: 35, salary:  5000000 },
+  { name: 'Geno Smith',         lastTeam: 'LVR', status: 'UFA',  prob: 35.0, age: 35, salary:  5000000 },
   { name: 'Russell Wilson',     lastTeam: 'NYG', status: 'UFA',  prob: 19.1, age: 38, salary: 10500000 },
   { name: 'Marcus Mariota',     lastTeam: 'WSH', status: 'UFA',  prob: 48.4, age: 33, salary:  8000000 },
   { name: 'Tyrod Taylor',       lastTeam: 'NYJ', status: 'UFA',  prob: 24.0, age: 37, salary:  6000000 },
@@ -411,7 +411,10 @@ function getAssignedFeaturedTeams() {
   const result = {};
   MAIN_QBS.forEach(q => {
     const t = state.qbTeam[q.id];
-    if (t && FEATURED_TEAMS.includes(t)) result[t] = q;
+    if (t && FEATURED_TEAMS.includes(t)) {
+      if (!result[t]) result[t] = [];
+      result[t].push(q);
+    }
   });
   return result;
 }
@@ -671,9 +674,9 @@ function renderSummary() {
 
   // Assigned featured teams
   FEATURED_TEAMS.forEach(t => {
-    const qb = assigned[t];
-    if (qb) {
-      cards.push({ team: t, qb: qb.name, tag: 'main' });
+    const qbs = assigned[t];
+    if (qbs) {
+      cards.push({ team: t, qbs: qbs.map(q => q.name), tag: 'main' });
     }
   });
 
@@ -681,23 +684,29 @@ function renderSummary() {
   unassigned.forEach(t => {
     const choice = state.teamChoice[t];
     if (choice === 'nokotae') {
-      cards.push({ team: t, qb: '動かない', tag: 'none' });
+      cards.push({ team: t, qbs: ['動かない'], tag: 'none' });
     } else if (choice === 'fa') {
       const name = state.teamFa[t] === '__custom__' ? state.teamFaCustom[t] : state.teamFa[t];
-      if (name) cards.push({ team: t, qb: name, tag: 'fa' });
+      if (name) cards.push({ team: t, qbs: [name], tag: 'fa' });
     } else if (choice === 'trade') {
       const name = state.teamTrade[t] === '__custom__' ? state.teamTradeCustom[t] : state.teamTrade[t];
-      if (name) cards.push({ team: t, qb: name, tag: 'trade' });
+      if (name) cards.push({ team: t, qbs: [name], tag: 'trade' });
     } else {
       return;
     }
   });
 
-  // Other teams (その他)
+  // Other teams (その他) — group by team
+  const otherMap = {};
   MAIN_QBS.forEach(q => {
     if (state.qbTeam[q.id] === 'other' && state.qbOtherTeam[q.id]) {
-      cards.push({ team: state.qbOtherTeam[q.id], qb: q.name, tag: 'main', extra: 'その他' });
+      const t = state.qbOtherTeam[q.id];
+      if (!otherMap[t]) otherMap[t] = [];
+      otherMap[t].push(q.name);
     }
+  });
+  Object.entries(otherMap).forEach(([t, names]) => {
+    cards.push({ team: t, qbs: names, tag: 'main', extra: 'その他' });
   });
 
   if (cards.length === 0) {
@@ -710,10 +719,11 @@ function renderSummary() {
                    : c.tag === 'fa' ? 'FA補強' : c.tag === 'trade' ? 'トレード' : '動かない';
     const tagClass = c.tag === 'main' ? (c.extra ? 'tag-fa' : 'tag-main')
                    : (c.tag === 'fa' || c.tag === 'trade') ? 'tag-fa' : 'tag-none';
+    const qbHtml = c.qbs.map(name => `<div class="summary-qb">${name}</div>`).join('');
     return `
       <div class="summary-card">
         <div class="summary-team">${c.team}</div>
-        <div class="summary-qb">${c.qb}</div>
+        ${qbHtml}
         <span class="summary-tag ${tagClass}">${tagLabel}</span>
       </div>
     `;
