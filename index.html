@@ -301,7 +301,7 @@ const QB_AVATARS = [
 
 const MAIN_QBS = [
   { id: 'murray',  name: 'Kyler Murray',     initials: 'KM', from: 'ARI' },
-  { id: 'willis',  name: 'Malik Willis',      initials: 'MW', from: 'GB (FA)' },
+  { id: 'willis',  name: 'Malik Willis',      initials: 'MW', from: 'GB (FA)', confirmed: 'MIA' },
   { id: 'cousins', name: 'Kirk Cousins',      initials: 'KC', from: 'ATL' },
   { id: 'rodgers', name: 'Aaron Rodgers',     initials: 'AR', from: 'PIT (FA)' },
   { id: 'tua',     name: 'Tua Tagovailoa',    initials: 'TT', from: 'MIA' },
@@ -398,7 +398,7 @@ const state = {
   teamTradeCustom: {},// teamAbbr → custom trade player name
 };
 
-MAIN_QBS.forEach(q => { state.qbTeam[q.id] = null; state.qbOtherTeam[q.id] = null; });
+MAIN_QBS.forEach(q => { state.qbTeam[q.id] = q.confirmed || null; state.qbOtherTeam[q.id] = null; });
 FEATURED_TEAMS.forEach(t => {
   state.teamChoice[t] = null; state.teamFa[t] = null; state.teamFaCustom[t] = null;
   state.teamTrade[t] = null;  state.teamTradeCustom[t] = null;
@@ -475,6 +475,7 @@ function renderQBList() {
   MAIN_QBS.forEach((qb, idx) => {
     const av = QB_AVATARS[idx];
     const selected = state.qbTeam[qb.id];
+    const isConfirmed = !!qb.confirmed;
     const isAssigned = selected !== null;
     const isOther = selected === 'other';
     const otherVal = state.qbOtherTeam[qb.id];
@@ -488,39 +489,45 @@ function renderQBList() {
           <div class="qb-name">${qb.name}</div>
           <div class="qb-from">前所属: ${qb.from}</div>
         </div>
-        ${isAssigned && !isOther ? `<div class="assigned-badge">→ ${selected}</div>` : ''}
-        ${isOther && otherVal ? `<div class="assigned-badge" style="background:rgba(210,153,34,0.15);color:var(--yellow);">その他: ${otherVal}</div>` : ''}
+        ${isConfirmed
+          ? `<div class="assigned-badge" style="background:rgba(63,185,80,0.15);color:var(--green);">✓ ${qb.confirmed} 確定</div>`
+          : isAssigned && !isOther ? `<div class="assigned-badge">→ ${selected}</div>` : ''
+        }
+        ${!isConfirmed && isOther && otherVal ? `<div class="assigned-badge" style="background:rgba(210,153,34,0.15);color:var(--yellow);">その他: ${otherVal}</div>` : ''}
       </div>
-      <div class="team-chips">
-        ${FEATURED_TEAMS.map(t => {
-          const isSelf = state.qbTeam[qb.id] === t;
-          const othersTaking = MAIN_QBS.filter(q2 => q2.id !== qb.id && state.qbTeam[q2.id] === t);
-          const isTaken = othersTaking.length > 0;
-          const titleText = isTaken
-            ? (isSelf ? '自分も選択中 / ' : '') + othersTaking.map(q2 => q2.name).join('、') + 'も選択中'
-            : TEAM_INFO[t].full;
-          return `<button
-            class="chip${isSelf ? ' selected' : ''}${isTaken ? ' taken' : ''}"
-            title="${titleText}"
-            onclick="selectQBTeam('${qb.id}', '${t}')"
-          >${t}</button>`;
-        }).join('')}
-        <button
-          class="chip other-chip${isOther ? ' selected' : ''}"
-          onclick="selectQBTeam('${qb.id}', 'other')"
-          title="その他：メイン8チーム以外を選択"
-        >その他 ▾</button>
-      </div>
-      <div class="other-select-row ${isOther ? 'show' : ''}" id="other-row-${qb.id}">
-        <select class="styled-select" onchange="setOtherTeam('${qb.id}', this.value)">
-          <option value="">─ チームを選択 ─</option>
-          ${ALL_NFL_TEAMS
-            .filter(t => !FEATURED_TEAMS.includes(t))
-            .map(t => `<option value="${t}" ${otherVal === t ? 'selected' : ''}>${t}</option>`)
-            .join('')}
-        </select>
-        ${isOther && !otherVal ? '<span style="font-size:0.75rem;color:var(--yellow);">↑ チームを選んでください</span>' : ''}
-      </div>
+      ${isConfirmed
+        ? `<div style="font-size:0.78rem;color:var(--muted);padding:4px 0 2px;font-style:italic;">移籍先が確定しました</div>`
+        : `<div class="team-chips">
+          ${FEATURED_TEAMS.map(t => {
+            const isSelf = state.qbTeam[qb.id] === t;
+            const othersTaking = MAIN_QBS.filter(q2 => q2.id !== qb.id && state.qbTeam[q2.id] === t);
+            const isTaken = othersTaking.length > 0;
+            const titleText = isTaken
+              ? (isSelf ? '自分も選択中 / ' : '') + othersTaking.map(q2 => q2.name).join('、') + 'も選択中'
+              : TEAM_INFO[t].full;
+            return `<button
+              class="chip${isSelf ? ' selected' : ''}${isTaken ? ' taken' : ''}"
+              title="${titleText}"
+              onclick="selectQBTeam('${qb.id}', '${t}')"
+            >${t}</button>`;
+          }).join('')}
+          <button
+            class="chip other-chip${isOther ? ' selected' : ''}"
+            onclick="selectQBTeam('${qb.id}', 'other')"
+            title="その他：メイン8チーム以外を選択"
+          >その他 ▾</button>
+        </div>
+        <div class="other-select-row ${isOther ? 'show' : ''}" id="other-row-${qb.id}">
+          <select class="styled-select" onchange="setOtherTeam('${qb.id}', this.value)">
+            <option value="">─ チームを選択 ─</option>
+            ${ALL_NFL_TEAMS
+              .filter(t => !FEATURED_TEAMS.includes(t))
+              .map(t => `<option value="${t}" ${otherVal === t ? 'selected' : ''}>${t}</option>`)
+              .join('')}
+          </select>
+          ${isOther && !otherVal ? '<span style="font-size:0.75rem;color:var(--yellow);">↑ チームを選んでください</span>' : ''}
+        </div>`
+      }
     `;
     container.appendChild(card);
   });
@@ -780,7 +787,7 @@ function setTeamTradeCustom(team, val) {
 }
 
 function resetAll() {
-  MAIN_QBS.forEach(q => { state.qbTeam[q.id] = null; state.qbOtherTeam[q.id] = null; });
+  MAIN_QBS.forEach(q => { state.qbTeam[q.id] = q.confirmed || null; state.qbOtherTeam[q.id] = null; });
   FEATURED_TEAMS.forEach(t => {
     state.teamChoice[t] = null; state.teamFa[t] = null; state.teamFaCustom[t] = null;
     state.teamTrade[t] = null;  state.teamTradeCustom[t] = null;
@@ -796,8 +803,8 @@ function copyResult() {
 
   lines.push('【メインQB移籍先】');
   FEATURED_TEAMS.forEach(t => {
-    const qb = assigned[t];
-    if (qb) lines.push(`  ${t} → ${qb.name}`);
+    const qbs = assigned[t];
+    if (qbs) lines.push(`  ${t} → ${qbs.map(q => q.name).join(' / ')}`);
   });
   MAIN_QBS.forEach(q => {
     if (state.qbTeam[q.id] === 'other' && state.qbOtherTeam[q.id]) {
