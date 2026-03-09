@@ -191,6 +191,7 @@
     .tag-main { background: rgba(88,166,255,0.15); color: var(--accent); }
     .tag-fa { background: rgba(188,140,255,0.15); color: var(--purple); }
     .tag-none { background: rgba(139,148,158,0.12); color: var(--muted); }
+    .tag-confirmed { background: rgba(63,185,80,0.15); color: var(--green); }
 
     /* Buttons */
     .btn {
@@ -307,6 +308,11 @@ const MAIN_QBS = [
   { id: 'tua',     name: 'Tua Tagovailoa',    initials: 'TT', from: 'MIA' },
 ];
 
+// Confirmed signings for non-featured teams
+const CONFIRMED_SIGNINGS = [
+  { team: 'TEN', name: 'Mitchell Trubisky' },
+];
+
 const TEAM_INFO = {
   // ── Featured 8 ──
   LVR: { full: 'Las Vegas Raiders',       primary: '#000000', secondary: '#A5ACAF' },
@@ -365,7 +371,6 @@ const FA_QBS = [
   { name: 'Joe Flacco',         lastTeam: 'CIN', status: 'Void', prob: 62.7, age: 41, salary:  4250000 },
   { name: 'Kenny Pickett',      lastTeam: 'LVR', status: 'UFA',  prob:  8.0, age: 28, salary:  3516976 },
   { name: 'Jimmy Garoppolo',    lastTeam: 'LAR', status: 'UFA',  prob:  1.6, age: 35, salary:  3005000 },
-  { name: 'Mitchell Trubisky',  lastTeam: 'BUF', status: 'UFA',  prob:  8.7, age: 32, salary:  2625000 },
   { name: 'Case Keenum',        lastTeam: 'CHI', status: 'UFA',  prob:  0.0, age: 38, salary:  2250000 },
   { name: 'Trey Lance',         lastTeam: 'LAC', status: 'UFA',  prob:  8.7, age: 26, salary:  2000000 },
   { name: 'Carson Wentz',       lastTeam: 'MIN', status: 'UFA',  prob: 30.0, age: 34, salary:  1422500 },
@@ -703,6 +708,11 @@ function renderSummary() {
     }
   });
 
+  // Confirmed signings (non-featured teams)
+  CONFIRMED_SIGNINGS.forEach(s => {
+    cards.push({ team: s.team, qbs: [s.name], tag: 'confirmed' });
+  });
+
   // Other teams (その他) — group by team
   const otherMap = {};
   MAIN_QBS.forEach(q => {
@@ -722,9 +732,11 @@ function renderSummary() {
   }
 
   container.innerHTML = cards.map(c => {
-    const tagLabel = c.tag === 'main' ? (c.extra ? 'その他' : 'メインQB')
+    const tagLabel = c.tag === 'confirmed' ? '✓ 確定'
+                   : c.tag === 'main' ? (c.extra ? 'その他' : 'メインQB')
                    : c.tag === 'fa' ? 'FA補強' : c.tag === 'trade' ? 'トレード' : '動かない';
-    const tagClass = c.tag === 'main' ? (c.extra ? 'tag-fa' : 'tag-main')
+    const tagClass = c.tag === 'confirmed' ? 'tag-confirmed'
+                   : c.tag === 'main' ? (c.extra ? 'tag-fa' : 'tag-main')
                    : (c.tag === 'fa' || c.tag === 'trade') ? 'tag-fa' : 'tag-none';
     const qbHtml = c.qbs.map(name => `<div class="summary-qb">${name}</div>`).join('');
     return `
